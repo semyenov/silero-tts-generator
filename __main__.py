@@ -45,8 +45,8 @@ class SileroTTSProcessor:
     def __init__(
         self,
         language_id: str = "ru",
-        model_id: Optional[str] = None,
-        speaker_id: Optional[str] = None,
+        model_id: str = "v4_ru",
+        speaker_id: str = "xenia",
         sample_rate: int = 48000,
         output_dir: Optional[str] = None
     ):
@@ -59,13 +59,14 @@ class SileroTTSProcessor:
         :param sample_rate: Audio sample rate
         :param output_dir: Directory to save generated audio files
         """
-        # Comprehensive input validation
-        self._validate_inputs(language_id, model_id, speaker_id)
 
         self.language_id = language_id
-        self.model_id = model_id or list(self.LANGUAGE_MODELS[language_id].keys())[0]
-        self.speaker_id = speaker_id or self.LANGUAGE_MODELS[language_id][self.model_id][0]
+        self.model_id = model_id
+        self.speaker_id = speaker_id
         self.sample_rate = sample_rate
+     
+        # Comprehensive input validation
+        self._validate_inputs(language_id, model_id, speaker_id)
         
         # Create output directory if specified
         self.output_dir = Path(output_dir) if output_dir else Path.cwd() / "tts_outputs"
@@ -91,13 +92,11 @@ class SileroTTSProcessor:
         if language_id not in self.LANGUAGE_MODELS:
             raise ValueError(f"Unsupported language. Supported: {list(self.LANGUAGE_MODELS.keys())}")
 
-        if model_id and model_id not in self.LANGUAGE_MODELS[language_id]:
+        if model_id not in self.LANGUAGE_MODELS[language_id]:
             raise ValueError(f"Unsupported model for {language_id}. Supported: {list(self.LANGUAGE_MODELS[language_id].keys())}")
 
-        if speaker_id and model_id:
-            supported_speakers = self.LANGUAGE_MODELS[language_id][model_id]
-            if speaker_id not in supported_speakers:
-                raise ValueError(f"Unsupported speaker for {model_id}. Supported: {supported_speakers}")
+        if speaker_id not in self.LANGUAGE_MODELS[language_id][model_id]:
+            raise ValueError(f"Unsupported speaker for {model_id}. Supported: {self.LANGUAGE_MODELS[language_id][model_id]}")
 
     def _select_device(self) -> torch.device:
         """
