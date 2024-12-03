@@ -33,12 +33,12 @@ class SileroTTSProcessor:
             "v3_1_ru": ["random", "kseniya", "baya", "aidar", "eugene", "xenia"],
         },
         "en": {
-            "v3_en": ["lj"],
-            "lj_v2": ["lj"],
+            "v3_en": ["random", "lj"],
+            "lj_v2": ["random", "lj"],
         },
         "de": {
-            "v3_de": ["thorsten"],
-            "thorsten_v2": ["thorsten"],
+            "v3_de": ["random", "thorsten"],
+            "thorsten_v2": ["random", "thorsten"],
         },
     }
 
@@ -79,7 +79,10 @@ class SileroTTSProcessor:
         self.model = self._load_model()
 
     def _validate_inputs(
-        self, language_id: str, model_id: Optional[str], speaker_id: Optional[str]
+        self,
+        language_id: str,
+        model_id: Optional[str],
+        speaker_id: Optional[str],
     ):
         """
         Validate input parameters with detailed error messages.
