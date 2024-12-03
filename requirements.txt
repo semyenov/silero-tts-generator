@@ -11,3 +11,4 @@ soundfile==0.12.1
 wheel==0.45.1
 torch==2.5.1
 torchaudio==2.5.1
+tornado==6.4

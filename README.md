@@ -2,15 +2,22 @@
 
 ## Overview
 
-A Python-based text-to-speech generator using the Silero TTS models, supporting multiple languages and advanced SSML features.
-
-## Features
+A Python-based text-to-speech generator using the Silero TTS models, supporting
+multiple languages and advanced features:
 
 - Multiple language support (Russian, English, German)
 - SSML text processing
 - Noise reduction
 - GPU/CPU compatibility
 - Flexible speaker selection
+- Tornado-based API server for remote TTS generation
+
+## Project Structure
+
+- `__main__.py`: Example script demonstrating local TTS usage
+- `silero_tts_processor.py`: Core TTS processor class
+- `tts_server.py`: Tornado-based API server for remote TTS generation
+- `requirements.txt`: Project dependencies
 
 ## Prerequisites
 
@@ -39,10 +46,10 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Usage
+## Local Usage
 
 ```python
-from __main__ import SileroTTSProcessor
+from silero_tts_processor import SileroTTSProcessor
 
 # Create TTS processor
 tts = SileroTTSProcessor(language="ru", speaker="xenia")
@@ -50,10 +57,53 @@ tts = SileroTTSProcessor(language="ru", speaker="xenia")
 # Generate speech
 audio = tts.generate_speech(
     "<speak>Привет, мир!</speak>",
-    output_path="output.wav"
+    output_filename="output.wav"
 )
 tts.play_audio(audio)
 ```
+
+## API Server Usage
+
+Start the Tornado API server:
+
+```bash
+python tts_server.py
+```
+
+### API Endpoints
+
+#### Generate TTS
+
+`POST /tts`
+
+Request Body:
+
+```json
+{
+  "text": "Текст для синтеза речи",
+  "language": "ru",
+  "model": "v4_ru",
+  "speaker": "xenia",
+  "enhance_noise": true
+}
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "filename": "generated_audio_file.wav",
+  "path": "/full/path/to/audio/file",
+  "duration": 3.5
+}
+```
+
+#### Retrieve Audio File
+
+`GET /audio/{filename}`
+
+Retrieves the generated audio file.
 
 ## Supported Languages
 
