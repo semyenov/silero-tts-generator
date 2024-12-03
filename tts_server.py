@@ -4,8 +4,6 @@ import logging
 import uuid
 import tornado.ioloop
 import tornado.web
-import soundfile as sf
-import numpy as np
 
 from silero_tts_processor import SileroTTSProcessor
 
