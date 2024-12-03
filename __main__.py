@@ -171,8 +171,8 @@ class SileroTTSProcessor:
                 audio = logmmse(
                     np.asarray(audio),
                     self.sample_rate,
-                    initial_noise=1,
-                    window_size=150,
+                    initial_noise=3,
+                    window_size=50,
                     noise_threshold=0.25,
                 )
 
@@ -211,14 +211,13 @@ def main():
                 В недрах тундры выдры в гетрах тырят в ведрах +ядра к+едров!
             </p>
             <p>
-                Когда я просыпаюсь, 
-                <prosody rate="slow">я говорю довольно</prosody>
-                <prosody rate="x-slow">медленно</prosody>.
-                <prosody pitch="x-high">А могу говорить тоном выше</prosody> и 
-                <prosody pitch="x-low">
-                    <s>и низким тоном</s>
-                    <prosody rate="x-fast">и очень быстро тоже могу</prosody>
-                </prosody>
+                <prosody rate="slow">я говорю медленно, а могу</prosody>
+                <prosody rate="x-slow">ещё медленнее</prosody>.
+                <prosody pitch="x-high">ещё я могу говорить тоном выше</prosody>
+                <break time="500ms"/>
+                <prosody pitch="x-low">и низким тоном</prosody>
+                <break time="500ms"/>
+                <prosody rate="x-fast" pitch="x-low">и очень быстро тоже могу</prosody>
             </p>
         </speak>
     """
