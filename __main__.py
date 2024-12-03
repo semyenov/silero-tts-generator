@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from typing import Optional, Dict, List
 from pathlib import Path
 
@@ -15,8 +16,8 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
         logging.StreamHandler(),
-        logging.FileHandler("tts_log.txt", encoding="utf-8")
-    ]
+        logging.FileHandler("tts_log.txt", encoding="utf-8"),
+    ],
 )
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class SileroTTSProcessor:
         "de": {
             "v3_de": ["thorsten"],
             "thorsten_v2": ["thorsten"],
-        }
+        },
     }
 
     def __init__(
@@ -48,7 +49,7 @@ class SileroTTSProcessor:
         model_id: str = "v4_ru",
         speaker_id: str = "xenia",
         sample_rate: int = 48000,
-        output_dir: Optional[str] = None
+        output_dir: Optional[str] = None,
     ):
         """
         Initialize the TTS processor with enhanced configuration and validation.
@@ -64,10 +65,10 @@ class SileroTTSProcessor:
         self.model_id = model_id
         self.speaker_id = speaker_id
         self.sample_rate = sample_rate
-     
+
         # Comprehensive input validation
         self._validate_inputs(language_id, model_id, speaker_id)
-        
+
         # Create output directory if specified
         self.output_dir = Path(output_dir) if output_dir else Path.cwd() / "tts_outputs"
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -79,42 +80,45 @@ class SileroTTSProcessor:
         self.model = self._load_model()
 
     def _validate_inputs(
-        self, 
-        language_id: str, 
-        model_id: Optional[str], 
-        speaker_id: Optional[str]
+        self, language_id: str, model_id: Optional[str], speaker_id: Optional[str]
     ):
         """
         Validate input parameters with detailed error messages.
-        
+
         :raises ValueError: If inputs are invalid
         """
         if language_id not in self.LANGUAGE_MODELS:
-            raise ValueError(f"Unsupported language. Supported: {list(self.LANGUAGE_MODELS.keys())}")
+            raise ValueError(
+                f"Unsupported language. Supported: {list(self.LANGUAGE_MODELS.keys())}"
+            )
 
         if model_id not in self.LANGUAGE_MODELS[language_id]:
-            raise ValueError(f"Unsupported model for {language_id}. Supported: {list(self.LANGUAGE_MODELS[language_id].keys())}")
+            raise ValueError(
+                f"Unsupported model for {language_id}. Supported: {list(self.LANGUAGE_MODELS[language_id].keys())}"
+            )
 
         if speaker_id not in self.LANGUAGE_MODELS[language_id][model_id]:
-            raise ValueError(f"Unsupported speaker for {model_id}. Supported: {self.LANGUAGE_MODELS[language_id][model_id]}")
+            raise ValueError(
+                f"Unsupported speaker for {model_id}. Supported: {self.LANGUAGE_MODELS[language_id][model_id]}"
+            )
 
     def _select_device(self) -> torch.device:
         """
         Intelligently select computation device with detailed logging.
-        
+
         :return: Selected torch device
         """
         if torch.cuda.is_available():
             logger.info(f"CUDA available. Using GPU: {torch.cuda.get_device_name(0)}")
             return torch.device("cuda")
-        
+
         logger.info("No CUDA GPU available. Falling back to CPU.")
         return torch.device("cpu")
 
     def _load_model(self):
         """
         Load Silero TTS model with comprehensive error handling.
-        
+
         :return: Loaded TTS model
         :raises RuntimeError: If model loading fails
         """
@@ -128,7 +132,7 @@ class SileroTTSProcessor:
                 put_yo=True,
             )
             model.to(self.device)
-            
+
             logger.info(
                 f"Model successfully loaded: "
                 f"Language={self.language_id}, "
@@ -145,11 +149,11 @@ class SileroTTSProcessor:
         self,
         text: str,
         output_filename: Optional[str] = None,
-        enhance_noise: bool = True
+        enhance_noise: bool = True,
     ) -> np.ndarray:
         """
         Generate speech with enhanced error handling and optional noise reduction.
-        
+
         :param text: Input text or SSML
         :param output_filename: Optional filename for saving audio
         :param enhance_noise: Apply noise reduction
@@ -188,7 +192,7 @@ class SileroTTSProcessor:
     def play_audio(self, audio: np.ndarray):
         """
         Play generated audio with timeout and error handling.
-        
+
         :param audio: Audio numpy array
         """
         try:
@@ -225,12 +229,12 @@ def main():
             language_id="ru",
             model_id="v4_ru",
             speaker_id="xenia",
-            output_dir="./tts_outputs"
+            output_dir="./tts_outputs",
         )
 
         audio = tts_processor.generate_speech(
-            example_text, 
-            output_filename="example_speech.wav"
+            example_text,
+            output_filename=time.strftime("%Y-%m-%d_%H-%M-%S") + ".wav",
         )
 
         tts_processor.play_audio(audio)
