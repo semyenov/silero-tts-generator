@@ -197,10 +197,19 @@ class AudioFileHandler(BaseHandler):
         self.write(json.dumps({"success": False, "error": str(error)}))
 
 
+class IndexHandler(tornado.web.RequestHandler):
+    """Handler to serve the index.html file"""
+
+    def get(self):
+        """Serve the index.html file"""
+        self.render("./static/index.html")
+
+
 def make_app() -> tornado.web.Application:
     """Create Tornado web application"""
     return tornado.web.Application(
         [
+            (r"/", IndexHandler),
             (r"/tts", TTSHandler),
             (r"/audio/([^/]+)", AudioFileHandler),
         ],
