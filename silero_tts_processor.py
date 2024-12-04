@@ -125,8 +125,6 @@ class SileroTTSProcessor:
                 model="silero_tts",
                 language=self.language_id,
                 speaker=self.model_id,
-                put_accent=True,
-                put_yo=True,
             )
             model.to(self.device)
 
@@ -172,6 +170,8 @@ class SileroTTSProcessor:
                 ssml_text=text,
                 speaker=speaker_id,
                 sample_rate=self.sample_rate,
+                put_accent=True,
+                put_yo=True,
             )
 
             # Optional noise enhancement
