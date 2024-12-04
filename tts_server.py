@@ -21,25 +21,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-LANGUAGE_ID = "ru"
-MODEL_ID = "v4_ru"
-AUDIO_OUTPUT_DIR = Path(os.path.join(os.getcwd(), "tts_outputs"))
+PORT = int(os.getenv("PORT", 8765))
+LANGUAGE_ID = os.getenv("LANGUAGE_ID", "ru")
+MODEL_ID = os.getenv("MODEL_ID", "v4_ru")
+OUTPUT_DIR = Path(os.path.join(os.getcwd(), os.getenv("OUTPUT_DIR", "tts_outputs")))
 
 # Global TTS Processor
 tts_processor = SileroTTSProcessor(
     language_id=LANGUAGE_ID,
     model_id=MODEL_ID,
-    output_dir=AUDIO_OUTPUT_DIR,
+    output_dir=OUTPUT_DIR,
 )
 
 
 class BaseHandler(tornado.web.RequestHandler):
+    def set_default_headers(self):
+        self.set_header("Content-Type", "application/json")
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "Content-Type")
+        self.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+
     def write_error(self, status_code, **kwargs):
         """
         Override Tornado's default error handler to return JSON
         """
-        self.set_header("Content-Type", "application/json")
-
         # Get the error details
         error_message = self.settings.get("message", "")
 
@@ -63,12 +68,6 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class TTSHandler(BaseHandler):
-    def set_default_headers(self):
-        self.set_header("Content-Type", "application/json")
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "Content-Type")
-        self.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-
     def options(self):
         # Preflight request for CORS
         self.set_status(204)
@@ -119,19 +118,13 @@ class TTSHandler(BaseHandler):
             self.write(json.dumps({"success": False, "error": str(e)}))
 
 
-class AudioFileHandler(tornado.web.RequestHandler):
-    def set_default_headers(self):
-        self.set_header("Content-Type", "application/json")
-        self.set_header("Access-Control-Allow-Origin", "*")
-        self.set_header("Access-Control-Allow-Headers", "Content-Type")
-        self.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-
+class AudioFileHandler(BaseHandler):
     def get(self, filename):
         try:
-            filepath = os.path.join(AUDIO_OUTPUT_DIR, filename)
+            filepath = OUTPUT_DIR / Path(filename)
 
             # Check if file exists
-            if not os.path.exists(filepath):
+            if not filepath.exists():
                 raise FileNotFoundError(f"Audio file {filename} not found")
 
             # Set headers for audio file
@@ -140,7 +133,8 @@ class AudioFileHandler(tornado.web.RequestHandler):
 
             # Write file contents
             with open(filepath, "rb") as f:
-                self.write(f.read())
+                wave_data = f.read()
+                self.write(wave_data)
             self.finish()
 
         except FileNotFoundError as fnf:
@@ -166,9 +160,8 @@ def make_app():
 
 def main():
     app = make_app()
-    port = 8765
-    app.listen(port)
-    logger.info(f"TTS Server running on http://localhost:{port}")
+    app.listen(PORT)
+    logger.info(f"TTS Server running on http://localhost:{PORT}")
     tornado.ioloop.IOLoop.current().start()
 
 

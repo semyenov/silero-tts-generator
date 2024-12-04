@@ -4,7 +4,6 @@ from pathlib import Path
 
 import torch
 import soundfile as sf
-import sounddevice as sd
 import numpy as np
 from logmmse import logmmse
 
