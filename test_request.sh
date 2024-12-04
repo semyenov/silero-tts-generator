@@ -71,11 +71,9 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/tts" \
 SUCCESS=$(echo "$RESPONSE" | jq -r '.success')
 if [ "$SUCCESS" = "true" ]; then
     FILENAME=$(echo "$RESPONSE" | jq -r '.filename')
-    DURATION=$(echo "$RESPONSE" | jq -r '.duration')
 
     echo -e "${GREEN}Speech generated successfully!${NC}"
     echo -e "${YELLOW}Filename:${NC} $FILENAME"
-    echo -e "${YELLOW}Duration:${NC} $DURATION seconds"
 
     # Attempt to download the audio file
     echo -e "${YELLOW}Downloading audio file...${NC}"

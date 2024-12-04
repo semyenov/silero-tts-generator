@@ -119,8 +119,7 @@ Response:
 ```json
 {
   "success": true,
-  "filename": "generated_audio_file.wav",
-  "duration": 3.5
+  "filename": "generated_audio_file.wav"
 }
 ```
 
