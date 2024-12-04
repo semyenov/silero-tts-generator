@@ -45,7 +45,6 @@ class SileroTTSProcessor:
         self,
         language_id: str = "ru",
         model_id: str = "v4_ru",
-        speaker_id: str = "xenia",
         sample_rate: int = 48000,
         output_dir: Optional[str] = None,
     ):
@@ -54,18 +53,16 @@ class SileroTTSProcessor:
 
         :param language_id: Target language
         :param model_id: Specific model variant
-        :param speaker_id: Specific speaker voice
         :param sample_rate: Audio sample rate
         :param output_dir: Directory to save generated audio files
         """
 
         self.language_id = language_id
         self.model_id = model_id
-        self.speaker_id = speaker_id
         self.sample_rate = sample_rate
 
         # Comprehensive input validation
-        self._validate_inputs(language_id, model_id, speaker_id)
+        self._validate_inputs(language_id, model_id)
 
         # Create output directory if specified
         self.output_dir = Path(output_dir) if output_dir else Path.cwd() / "tts_outputs"
@@ -81,7 +78,6 @@ class SileroTTSProcessor:
         self,
         language_id: str,
         model_id: Optional[str],
-        speaker_id: Optional[str],
     ):
         """
         Validate input parameters with detailed error messages.
@@ -98,9 +94,10 @@ class SileroTTSProcessor:
                 f"Unsupported model for {language_id}. Supported: {list(self.LANGUAGE_MODELS[language_id].keys())}"
             )
 
-        if speaker_id not in self.LANGUAGE_MODELS[language_id][model_id]:
+    def _validate_speaker(self, speaker_id: str):
+        if speaker_id not in self.LANGUAGE_MODELS[self.language_id][self.model_id]:
             raise ValueError(
-                f"Unsupported speaker for {model_id}. Supported: {self.LANGUAGE_MODELS[language_id][model_id]}"
+                f"Unsupported speaker for {self.model_id}. Supported: {self.LANGUAGE_MODELS[self.language_id][self.model_id]}"
             )
 
     def _select_device(self) -> torch.device:
@@ -138,7 +135,6 @@ class SileroTTSProcessor:
                 f"Model successfully loaded: "
                 f"Language={self.language_id}, "
                 f"Model={self.model_id}, "
-                f"Speaker={self.speaker_id}"
             )
             return model
 
@@ -149,8 +145,9 @@ class SileroTTSProcessor:
     def generate_speech(
         self,
         text: str,
-        output_filename: Optional[str] = None,
+        speaker_id: str = "xenia",
         enhance_noise: bool = True,
+        output_filename: Optional[str] = None,
     ) -> np.ndarray:
         """
         Generate speech with enhanced error handling and optional noise reduction.
@@ -161,10 +158,20 @@ class SileroTTSProcessor:
         :return: Generated audio array
         """
         try:
+            # Validate speaker
+            self._validate_speaker(speaker_id)
+
+            # strip text from leading and trailing whitespace
+            text = text.strip()
+
+            # if text is not SSML, convert it to SSML
+            if not text.startswith("<speak>"):
+                text = f"<speak>{text}</speak>"
+
             # Generate audio
             audio = self.model.apply_tts(
                 ssml_text=text,
-                speaker=self.speaker_id,
+                speaker=speaker_id,
                 sample_rate=self.sample_rate,
             )
 
@@ -188,19 +195,4 @@ class SileroTTSProcessor:
 
         except Exception as e:
             logger.error(f"Speech generation failed: {e}")
-            raise
-
-    def play_audio(self, audio: np.ndarray):
-        """
-        Play generated audio with timeout and error handling.
-
-        :param audio: Audio numpy array
-        """
-        try:
-            sd.play(audio, self.sample_rate)
-            sd.wait()
-        except sd.CallbackStop:
-            logger.warning("Audio playback interrupted")
-        except Exception as e:
-            logger.error(f"Audio playback failed: {e}")
             raise

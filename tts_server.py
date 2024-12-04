@@ -2,8 +2,11 @@ import os
 import json
 import logging
 import uuid
+from pathlib import Path
+
 import tornado.ioloop
 import tornado.web
+import traceback
 
 from silero_tts_processor import SileroTTSProcessor
 
@@ -18,20 +21,48 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Create output directory for audio files
-AUDIO_OUTPUT_DIR = os.path.join(os.getcwd(), "tts_outputs")
-os.makedirs(AUDIO_OUTPUT_DIR, exist_ok=True)
+LANGUAGE_ID = "ru"
+MODEL_ID = "v4_ru"
+AUDIO_OUTPUT_DIR = Path(os.path.join(os.getcwd(), "tts_outputs"))
 
 # Global TTS Processor
 tts_processor = SileroTTSProcessor(
-    language_id="ru",  # Default language
-    model_id="v4_ru",  # Default model
-    speaker_id="xenia",  # Default speaker
+    language_id=LANGUAGE_ID,
+    model_id=MODEL_ID,
     output_dir=AUDIO_OUTPUT_DIR,
 )
 
 
-class TTSHandler(tornado.web.RequestHandler):
+class BaseHandler(tornado.web.RequestHandler):
+    def write_error(self, status_code, **kwargs):
+        """
+        Override Tornado's default error handler to return JSON
+        """
+        self.set_header("Content-Type", "application/json")
+
+        # Get the error details
+        error_message = self.settings.get("message", "")
+
+        # If an exception was raised, include its details
+        if "exc_info" in kwargs:
+            error_message = str(kwargs["exc_info"][1])
+            # Optionally include traceback for debugging
+            # error_trace = traceback.format_exception(*kwargs['exc_info'])
+
+        # Construct error response
+        error_response = {
+            "success": False,
+            "status_code": status_code,
+            "error": error_message,
+        }
+
+        # Write the JSON error response
+        self.set_status(status_code)
+        self.write(json.dumps(error_response))
+        self.finish()
+
+
+class TTSHandler(BaseHandler):
     def set_default_headers(self):
         self.set_header("Content-Type", "application/json")
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -48,8 +79,6 @@ class TTSHandler(tornado.web.RequestHandler):
             # Parse request body
             data = json.loads(self.request.body)
             text = data.get("text", "")
-            language = data.get("language", "ru")
-            model = data.get("model", "v4_ru")
             speaker = data.get("speaker", "xenia")
             enhance_noise = data.get("enhance_noise", True)
 
@@ -57,27 +86,15 @@ class TTSHandler(tornado.web.RequestHandler):
             if not text:
                 raise ValueError("Text is required")
 
-            # Update TTS processor configuration if needed
-            if (
-                language != tts_processor.language_id
-                or model != tts_processor.model_id
-                or speaker != tts_processor.speaker_id
-            ):
-                tts_processor._validate_inputs(language, model, speaker)
-                tts_processor.language_id = language
-                tts_processor.model_id = model
-                tts_processor.speaker_id = speaker
-                tts_processor.model = tts_processor._load_model()
-
             # Generate unique filename
             filename = f"{uuid.uuid4()}.wav"
-            full_path = os.path.join(AUDIO_OUTPUT_DIR, filename)
 
             # Generate speech
             audio = tts_processor.generate_speech(
                 text,
-                output_filename=filename,
+                speaker_id=speaker,
                 enhance_noise=enhance_noise,
+                output_filename=filename,
             )
 
             # Respond with file details
@@ -86,7 +103,6 @@ class TTSHandler(tornado.web.RequestHandler):
                     {
                         "success": True,
                         "filename": filename,
-                        "path": full_path,
                         "duration": len(audio) / tts_processor.sample_rate,
                     }
                 )
@@ -104,6 +120,12 @@ class TTSHandler(tornado.web.RequestHandler):
 
 
 class AudioFileHandler(tornado.web.RequestHandler):
+    def set_default_headers(self):
+        self.set_header("Content-Type", "application/json")
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Access-Control-Allow-Headers", "Content-Type")
+        self.set_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+
     def get(self, filename):
         try:
             filepath = os.path.join(AUDIO_OUTPUT_DIR, filename)
@@ -136,7 +158,9 @@ def make_app():
         [
             (r"/tts", TTSHandler),
             (r"/audio/([^/]+)", AudioFileHandler),
-        ]
+        ],
+        debug=True,
+        default_handler_class=BaseHandler,
     )
 
 

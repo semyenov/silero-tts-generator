@@ -11,11 +11,9 @@ BASE_URL="http://localhost:8765"
 
 # Function to display usage
 usage() {
-    echo "Usage: $0 [-t text] [-l language] [-m model] [-s speaker] [-h]"
+    echo "Usage: $0 -t text [-s speaker] [-h]"
     echo "Options:"
     echo "  -t    Text to convert to speech (required)"
-    echo "  -l    Language (default: ru)"
-    echo "  -m    Model (default: v4_ru)"
     echo "  -s    Speaker (default: xenia)"
     echo "  -h    Show this help message"
     exit 1
@@ -23,21 +21,13 @@ usage() {
 
 # Default values
 TEXT=""
-LANGUAGE="ru"
-MODEL="v4_ru"
 SPEAKER="xenia"
 
 # Parse arguments using getopts
-while getopts ":t:l:m:s:h" opt; do
+while getopts ":t:s:h" opt; do
     case ${opt} in
     t)
         TEXT="$OPTARG"
-        ;;
-    l)
-        LANGUAGE="$OPTARG"
-        ;;
-    m)
-        MODEL="$OPTARG"
         ;;
     s)
         SPEAKER="$OPTARG"
@@ -66,8 +56,6 @@ fi
 # Perform TTS request
 echo -e "${YELLOW}Generating speech...${NC}"
 echo -e "${GREEN}Text:${NC} $TEXT"
-echo -e "${GREEN}Language:${NC} $LANGUAGE"
-echo -e "${GREEN}Model:${NC} $MODEL"
 echo -e "${GREEN}Speaker:${NC} $SPEAKER"
 
 # Make the request
@@ -75,8 +63,6 @@ RESPONSE=$(curl -s -X POST "$BASE_URL/tts" \
     -H "Content-Type: application/json" \
     -d "{
         \"text\": \"$TEXT\",
-        \"language\": \"$LANGUAGE\",
-        \"model\": \"$MODEL\",
         \"speaker\": \"$SPEAKER\",
         \"enhance_noise\": true
     }")
@@ -93,7 +79,7 @@ if [ "$SUCCESS" = "true" ]; then
 
     # Attempt to download the audio file
     echo -e "${YELLOW}Downloading audio file...${NC}"
-    curl -O "$BASE_URL/audio/$FILENAME"
+    curl -s -O "$BASE_URL/audio/$FILENAME"
 
     echo -e "${GREEN}Audio file downloaded: $FILENAME${NC}"
 else

@@ -55,11 +55,16 @@ pip install -r requirements.txt
 from silero_tts_processor import SileroTTSProcessor
 
 # Create TTS processor
-tts = SileroTTSProcessor(language="ru", speaker="xenia")
+tts = SileroTTSProcessor(
+    language_id="ru",
+    model_id="v4_ru",
+)
 
 # Generate speech
 audio = tts.generate_speech(
     "<speak>Привет, мир</speak>",
+    speaker_id="xenia",
+    enhance_noise=True,
     output_filename="output.wav"
 )
 tts.play_audio(audio)
@@ -79,23 +84,19 @@ A convenient bash script `test_request.sh` is provided to test the TTS API:
 
 ```bash
 # Basic usage
-./test_request.sh -t "<speak>Привет, мир</speak>"
+./test_request.sh -t "Привет, мир"
 
 # Advanced usage with custom parameters
 ./test_request.sh \
     -t "<speak>Привет, мир</speak>" \
-    -l ru \
-    -m v4_ru \
     -s xenia
 ```
 
 Script options:
 
-- `-t, --text`: Text to convert to speech (required)
-- `-l, --lang`: Language (default: ru)
-- `-m, --model`: Model (default: v4_ru)
-- `-s, --speaker`: Speaker (default: xenia)
-- `-h, --help`: Show help message
+- `-t`: Text to convert to speech (required)
+- `-s`: Speaker (default: xenia)
+- `-h`: Show help message
 
 ### API Endpoints
 
@@ -108,8 +109,6 @@ Request Body:
 ```json
 {
   "text": "<speak>Текст для синтеза речи</speak>",
-  "language": "ru",
-  "model": "v4_ru",
   "speaker": "xenia",
   "enhance_noise": true
 }
@@ -121,7 +120,6 @@ Response:
 {
   "success": true,
   "filename": "generated_audio_file.wav",
-  "path": "/full/path/to/audio/file",
   "duration": 3.5
 }
 ```
@@ -137,6 +135,10 @@ Retrieves the generated audio file.
 - Russian
 - English
 - German
+- ...
+
+Full list of supported languages and models
+can be found [here](https://raw.githubusercontent.com/snakers4/silero-models/refs/heads/master/models.yml).
 
 ## Troubleshooting
 
